@@ -2,22 +2,40 @@
 
 /**
  * Server entry point for n8n on Hostinger
- * This file is required by Hostinger to recognize the project as a Node.js application
+ * Simple wrapper to start n8n
  */
 
-// Import n8n
-const { start } = require('n8n');
+const { exec } = require('child_process');
 
-// Get port from environment variable (Hostinger assigns this automatically)
 const port = process.env.PORT || process.env.N8N_PORT || 5678;
 const host = process.env.N8N_HOST || '0.0.0.0';
 
-// Start n8n
-start({
-  port: parseInt(port, 10),
-  host: host,
-  protocol: process.env.N8N_PROTOCOL || 'https',
-}).catch((error) => {
-  console.error('Error starting n8n:', error);
+console.log(`Starting n8n on ${host}:${port}...`);
+
+// Start n8n using npx
+const n8n = exec(`npx n8n start --port ${port} --host ${host}`, {
+  env: {
+    ...process.env,
+    N8N_PORT: port.toString(),
+    N8N_HOST: host,
+    N8N_PROTOCOL: process.env.N8N_PROTOCOL || 'https',
+  }
+});
+
+n8n.stdout.on('data', (data) => {
+  console.log(data.toString());
+});
+
+n8n.stderr.on('data', (data) => {
+  console.error(data.toString());
+});
+
+n8n.on('close', (code) => {
+  console.log(`n8n process exited with code ${code}`);
+  process.exit(code);
+});
+
+n8n.on('error', (error) => {
+  console.error('Failed to start n8n:', error);
   process.exit(1);
 });
