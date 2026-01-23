@@ -81,10 +81,10 @@ node --version
 npm --version
 ```
 
-## Szybka komenda (wszystko naraz)
+## Szybka komenda (wszystko naraz) - BEZ SUDO
 
 ```bash
-# Skopiuj i wklej całą sekwencję:
+# Skopiuj i wklej całą sekwencję (działa bez sudo):
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -97,3 +97,19 @@ source ~/.bashrc
 node --version
 npm --version
 ```
+
+## Użyj gotowego skryptu setup
+
+```bash
+# Sklonuj repo (jeśli jeszcze nie)
+git clone https://github.com/PiotrSobiecki/n8n.git
+cd n8n
+
+# Uruchom skrypt setup
+chmod +x setup-hostinger.sh
+./setup-hostinger.sh
+```
+
+## WAŻNE: Na Hostingerze NIE MA SUDO
+
+Na współdzielonym hostingu Hostingera **nie masz dostępu do sudo**. Wszystkie komendy muszą być wykonywane bez sudo. NVM i Node.js można zainstalować bez sudo w katalogu użytkownika.
