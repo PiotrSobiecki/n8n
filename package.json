@@ -2,10 +2,10 @@
   "name": "n8n-hostinger",
   "version": "1.0.0",
   "description": "n8n workflow automation on Hostinger",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "n8n start",
-    "start:production": "N8N_ENV=production n8n start"
+    "start": "node server.js",
+    "start:production": "NODE_ENV=production node server.js"
   },
   "dependencies": {
     "n8n": "^1.62.0"
