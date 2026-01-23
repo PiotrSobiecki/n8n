@@ -1,0 +1,720 @@
+{
+  "name": "Moje faktury 2",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 15
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "has:attachment (subject:invoice OR subject:faktura OR subject:fv OR subject:payment OR subject:receipt OR subject:rachunek OR subject:billing OR subject:fvk)",
+          "readStatus": "unread"
+        },
+        "options": {
+          "dataPropertyAttachmentsPrefixName": "attachment_",
+          "downloadAttachments": true
+        }
+      },
+      "id": "afcb2e49-21f0-4686-93ca-fdbda2513503",
+      "name": "Gmail - Monitor faktur1",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        464
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CwKeTWyFBFD6MbJF",
+          "name": "Gmail account sobiecki@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "=attachment_0",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "cec26bdb-84fd-4580-865f-66454e2f9b56",
+      "name": "Sprawdź czy są załączniki1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ocr.space/parse/image",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "attachment_0"
+            },
+            {
+              "name": "language",
+              "value": "pol"
+            },
+            {
+              "name": "isOverlayRequired",
+              "value": "false"
+            },
+            {
+              "name": "OCREngine",
+              "value": "2"
+            },
+            {
+              "name": "filetype",
+              "value": "PDF"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fa4e7904-aaef-44b9-a7bf-0b3ebb93ea67",
+      "name": "OCR.space - Skanuj fakturę1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        336,
+        368
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "4OPPFSdva2hNusVp",
+          "name": "OCR.space API"
+        }
+      },
+      "notes": "WAŻNE! Konfiguracja credentials:\n1. W n8n Credentials dodaj 'Header Auth'\n2. Header Name: apikey (bez wielkiej litery!)\n3. Header Value: Twój API key z ocr.space\n\nEndpoint /parse/image działa dla PDF!\nParametr 'file' (nie base64Image) dla formBinaryData"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "attachment_0",
+        "name": "={{ $binary.attachment_0.fileName.replace(/\\//g, '_') + '_' + $now.toFormat('yyyyLLdd-HHmmss') }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1NEyjtLNDtfdYCEWWNzU8a5rpXE0xLuaM",
+          "mode": "list",
+          "cachedResultName": "faktury",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1NEyjtLNDtfdYCEWWNzU8a5rpXE0xLuaM"
+        },
+        "options": {}
+      },
+      "id": "2cbac579-ebb8-4d94-86fb-11285a9a330f",
+      "name": "Google Drive - Zapisz fakturę1",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        336,
+        560
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "QMEaJ71nDO56yCEc",
+          "name": "Google Drive @sobiecki.org"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Gmail - Monitor faktur1').item.json.id }}"
+      },
+      "id": "626c912a-754d-4b09-93ba-a63ffe619660",
+      "name": "Gmail - Oznacz jako przetworzone1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1360,
+        368
+      ],
+      "webhookId": "bea07bcb-7321-4a76-a210-e26e889f3c87",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CwKeTWyFBFD6MbJF",
+          "name": "Gmail account sobiecki@gmail.com"
+        }
+      },
+      "notes": "Opcjonalne - dodaje labelkę do przetworzonego emaila"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtruj tylko PDF z fakturami\n// WAŻNE: Iteruje przez WSZYSTKIE załączniki w emailu (attachment_0, attachment_1, ...)\nconst items = [];\n\nfor (const item of $input.all()) {\n  // Sprawdź czy są załączniki\n  if (!item.binary) continue;\n  \n  const subject = (item.json.subject || '').toLowerCase();\n  \n  // Iteruj przez wszystkie załączniki (attachment_0, attachment_1, attachment_2, ...)\n  let attachmentIndex = 0;\n  while (item.binary[`attachment_${attachmentIndex}`]) {\n    const attachment = item.binary[`attachment_${attachmentIndex}`];\n    const filename = (attachment.fileName || '').toLowerCase();\n    const mimeType = (attachment.mimeType || '').toLowerCase();\n    \n    // Sprawdź czy to PDF\n    const isPDF = mimeType.includes('pdf') || filename.endsWith('.pdf');\n    \n    // Słowa kluczowe faktur\n    const keywords = ['invoice', 'faktura', 'fv', 'payment', 'receipt', 'rachunek', 'billing', 'inv'];\n    const hasKeyword = keywords.some(kw => filename.includes(kw) || subject.includes(kw));\n    \n    if (isPDF && hasKeyword) {\n      // Utwórz nowy item dla KAŻDEGO załącznika\n      // Zmień nazwę attachment_X na attachment_0 (żeby reszta workflow działała)\n      const newItem = {\n        json: { ...item.json, _attachmentIndex: attachmentIndex },\n        binary: {\n          attachment_0: attachment\n        }\n      };\n      items.push(newItem);\n    }\n    \n    attachmentIndex++;\n  }\n}\n\nreturn items;"
+      },
+      "id": "a1ea33dc-04a8-4a8d-8f26-bd06b0a93969",
+      "name": "Filtruj tylko PDF z fakturami1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "={{ $json.ParsedResults[0].ParsedText }} \n\nZ powyższegoo tekstu wyodrębnij dane faktury i zwróć je w formacie JSON.\nWyciągnij następujące pola:\n\nnumber – numer faktury\n\nnet_value – wartość netto faktury\n\nvat – stawka VAT\n\ngross_value - wartość brutto faktury\n\ncurrency – waluta (np. PLN, EUR, USD) zawsze zwracaj w takiej postaci \n\ncontractors – nazwa firmy, która wystawiła fakturę (to nie jest Web3 Software)\n\nexecution_date - data wystawienia faktury (data w formacie yyyy-mm-dd)\n\nZasady:\n\nWartości liczbowe (net_value) zwróć bez symboli walut i bez dodatkowych znaków.\n\nVAT zwróć jako wartość liczbową zawsze , jak jest null wstaw 0 (np. \"23\", \"0\").\n\nJeśli w tekście brakuje któregoś pola, ustaw jego wartość na null.\n\nZwróć wyłącznie poprawny JSON, bez dodatkowych opisów.\n  "
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        560,
+        368
+      ],
+      "id": "4b507e96-6255-4cfc-b0eb-5f6a74393109",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "TuynrZvth4V33NQB",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * n8n - Code in JavaScript\n * Cel: zamienić tekst z odpowiedzi modelu (string) na prawdziwy JSON w output (schema).\n * Obsługuje wiele itemów (np. wiele załączników PDF w jednym mailu).\n */\n\nconst inputItems = $input.all();\n\nfunction normalizeParsed(parsed) {\n  // Normalizuj contractors do array\n  if (typeof parsed.contractor === \"string\") {\n    parsed.contractor = [parsed.contractor].filter(Boolean);\n  }\n  if (typeof parsed.contractors === \"string\") {\n    parsed.contractors = [parsed.contractors].filter(Boolean);\n  }\n\n  // Zbierz wszystkie nazwy kontrahentów jako zwykłe stringi\n  const contractorNames = [];\n\n  for (const v of [...(parsed.contractors ?? []), ...(parsed.contractor ?? [])]) {\n    if (typeof v !== \"string\") continue;\n    const s = v.trim();\n    if (!s) continue;\n    contractorNames.push(s);\n  }\n\n  // contractors: zwykła lista nazw (stringi)\n  parsed.contractors = Array.from(new Set(contractorNames));\n  parsed.contractor = parsed.contractors;\n\n  // Data wykonania - pozostaw w formacie yyyy-mm-dd (Excel)\n  if (parsed.execution_date && typeof parsed.execution_date === \"string\") {\n    // Jeśli jest w formacie ISO, wyciągnij samą datę\n    if (parsed.execution_date.includes(\"T\")) {\n      parsed.execution_date = parsed.execution_date.split(\"T\")[0];\n    }\n    // Zostaw yyyy-mm-dd\n  }\n\n  return parsed;\n}\n\nfunction parseFromModelText(itemJson) {\n  let text = itemJson?.output?.[0]?.content?.[0]?.text;\n\n  if (typeof text !== \"string\") {\n    throw new Error(\"Nie znaleziono tekstu w output[0].content[0].text\");\n  }\n\n  text = text\n    .trim()\n    .replace(/^```(?:json)?\\s*/i, \"\")\n    .replace(/```$/i, \"\")\n    .trim();\n\n  const match = text.match(/\\{[\\s\\S]*\\}/);\n  if (!match) {\n    throw new Error(\"W tekście nie ma obiektu JSON\");\n  }\n\n  return JSON.parse(match[0]);\n}\n\nconst out = [];\nfor (const it of inputItems) {\n  const parsed = normalizeParsed(parseFromModelText(it.json));\n  out.push({ json: parsed });\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        368
+      ],
+      "id": "895cdb21-a8b7-43bc-a9bc-cd64cd5f7d50",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "chatId": "-1001824126408",
+        "text": "=✅ Nowa Faktura dodana do [Excela](https://docs.google.com/spreadsheets/d/1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU/edit?gid=0#gid=0)\n\n📊 Szczegóły:\n\n• 📄 Numer: [{{ $('Append or update row in sheet').item.json['Nr faktury'] }}]\n• 🏢 Firma: [{{ $('Append or update row in sheet').item.json.Firma }}]\n• 📁 [Folder z fakturami](https://drive.google.com/drive/u/3/folders/1NEyjtLNDtfdYCEWWNzU8a5rpXE0xLuaM)\n\n⏰ Czas: {{ $now.setZone('Europe/Warsaw').toFormat('yyyy-MM-dd - HH:mm') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1584,
+        368
+      ],
+      "id": "1f0028b7-4aa7-48e6-b1d1-a231609f95df",
+      "name": "Send a text message",
+      "webhookId": "e3954209-c69f-4439-b9f0-9fe1769cac59",
+      "credentials": {
+        "telegramApi": {
+          "id": "DRoG4T6BkqkIkIHV",
+          "name": "Telegram Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU",
+          "mode": "list",
+          "cachedResultName": "Moje faktury",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Arkusz1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Nr faktury": "={{ $json.number }}",
+            "Data": "={{ $json.execution_date }}",
+            "Kwota Netto": "={{ $json.net_value }}",
+            "VAT": "={{ $json.vat }}",
+            "Waluta": "={{ $json.currency }}",
+            "Firma": "={{ $json.contractors[0] }}",
+            "Kwota Brutto": "={{ $json.gross_value }}"
+          },
+          "matchingColumns": [
+            "Nr faktury"
+          ],
+          "schema": [
+            {
+              "id": "LP",
+              "displayName": "LP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Nr faktury",
+              "displayName": "Nr faktury",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Data",
+              "displayName": "Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kwota Netto",
+              "displayName": "Kwota Netto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "VAT",
+              "displayName": "VAT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kwota Brutto",
+              "displayName": "Kwota Brutto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Waluta",
+              "displayName": "Waluta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Firma",
+              "displayName": "Firma",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        368
+      ],
+      "id": "4761e9c5-efb8-4428-af31-c7e39375924a",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PEOH00KRBvXg955P",
+          "name": "Google Sheets @sobiecki.org"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Znajdź pierwszy wiersz z pustym 'Link do faktury'\n// Węzeł 'Get row(s) in sheet' już filtruje wiersze z pustym linkiem,\n// więc bierzemy pierwszy wiersz z wyników\nconst rowsWithEmptyLink = $input.all();\n\nif (!rowsWithEmptyLink || rowsWithEmptyLink.length === 0) {\n  throw new Error('Nie znaleziono wiersza z pustym linkiem do faktury');\n}\n\n// Znajdź pierwszy wiersz z pustym linkiem (dodatkowe sprawdzenie na wszelki wypadek)\nlet targetRow = null;\nfor (const row of rowsWithEmptyLink) {\n  const linkToInvoice = row.json['Link do faktury'] || '';\n  if (linkToInvoice.trim() === '') {\n    targetRow = row.json;\n    break;\n  }\n}\n\n// Jeśli nadal nie znaleziono, użyj pierwszego wiersza\nif (!targetRow && rowsWithEmptyLink.length > 0) {\n  targetRow = rowsWithEmptyLink[0].json;\n}\n\nif (!targetRow) {\n  throw new Error('Nie znaleziono wiersza z pustym linkiem do faktury');\n}\n\n// Zwróć tylko ten wiersz z row_number do aktualizacji\nreturn [{ json: targetRow }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        560
+      ],
+      "id": "429a1b6a-7634-419b-a583-03ef1fb225da",
+      "name": "Znajdź wiersz z pustym linkiem"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU",
+          "mode": "list",
+          "cachedResultName": "Moje faktury",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Arkusz1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "Link do faktury": "={{ $('Google Drive - Zapisz fakturę1').item.json.webContentLink }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "LP",
+              "displayName": "LP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Nr faktury",
+              "displayName": "Nr faktury",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Data",
+              "displayName": "Data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Kwota Netto",
+              "displayName": "Kwota Netto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "VAT",
+              "displayName": "VAT",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Kwota Brutto",
+              "displayName": "Kwota Brutto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Waluta",
+              "displayName": "Waluta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Firma",
+              "displayName": "Firma",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link do faktury",
+              "displayName": "Link do faktury",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        560
+      ],
+      "id": "1d81a929-5c0b-4989-8487-b4e1359e9d7c",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PEOH00KRBvXg955P",
+          "name": "Google Sheets @sobiecki.org"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU",
+          "mode": "list",
+          "cachedResultName": "Moje faktury",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Arkusz1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i30BmG3aDhlsMLVAS4kjLpsLnWqm-aKMZj-XFpXiKWU/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Link do faktury"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        560
+      ],
+      "id": "1f909b73-07b9-40ea-9bcb-46da0ce2e930",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PEOH00KRBvXg955P",
+          "name": "Google Sheets @sobiecki.org"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail - Monitor faktur1": {
+      "main": [
+        [
+          {
+            "node": "Sprawdź czy są załączniki1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprawdź czy są załączniki1": {
+      "main": [
+        [
+          {
+            "node": "Filtruj tylko PDF z fakturami1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR.space - Skanuj fakturę1": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive - Zapisz fakturę1": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Oznacz jako przetworzone1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtruj tylko PDF z fakturami1": {
+      "main": [
+        [
+          {
+            "node": "OCR.space - Skanuj fakturę1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Drive - Zapisz fakturę1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Oznacz jako przetworzone1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Znajdź wiersz z pustym linkiem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Znajdź wiersz z pustym linkiem": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "366fb5f8-e182-48ee-b281-f2d054a6ffab",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "51c4d31089981c0ad199e2af1e24027eab07b58a3252314b7227e08b09928d30"
+  },
+  "id": "KVFv_czzixNrg0XY-s7wD",
+  "tags": []
+}

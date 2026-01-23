@@ -1,0 +1,186 @@
+{
+  "name": "Sprawdzanie zadań po terminie",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "11R8VMzsNy5LSdsL_6TRjbKXRGt6Xqt1EnbC7K_9OKSs",
+          "mode": "list",
+          "cachedResultName": "zadania",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11R8VMzsNy5LSdsL_6TRjbKXRGt6Xqt1EnbC7K_9OKSs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Arkusz1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11R8VMzsNy5LSdsL_6TRjbKXRGt6Xqt1EnbC7K_9OKSs/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "827813cc-cc3b-4998-849e-b651134ed385",
+      "name": "Google Sheets - Pobierz wszystkie zadania",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PEOH00KRBvXg955P",
+          "name": "Google Sheets @sobiecki.org"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtruj zadania po terminie i statusie\nconst allTasks = $input.all();\nconst now = new Date();\nconst currentHour = now.getHours();\nconst currentMinute = now.getMinutes();\nconst currentDate = now.toISOString().split('T')[0]; // Format: yyyy-mm-dd\n\nconst overdueTasks = [];\n\nfor (const task of allTasks) {\n  // Sprawdź status - pomiń zakończone zadania\n  const status = (task.json.Status || task.json.status || '').toLowerCase().trim();\n  if (status === 'completed' || status === 'wykonane' || status === 'zakończone') {\n    continue;\n  }\n  \n  // Sprawdź datę - tylko zadania na dzisiaj\n  const taskDate = task.json.data || task.json.date || '';\n  if (taskDate !== currentDate) {\n    continue;\n  }\n  \n  // Sprawdź godzinę wykonania\n  const scheduledTime = task.json['godzina wykonania'] || task.json.scheduled_time || '';\n  if (!scheduledTime || !scheduledTime.match(/^\\d{2}:\\d{2}$/)) {\n    continue; // Pomiń zadania bez godziny\n  }\n  \n  // Parsuj godzinę wykonania\n  const [scheduledHour, scheduledMinute] = scheduledTime.split(':').map(Number);\n  \n  // Sprawdź czy zadanie jest po terminie\n  const isOverdue = \n    scheduledHour < currentHour || \n    (scheduledHour === currentHour && scheduledMinute <= currentMinute);\n  \n  if (isOverdue) {\n    overdueTasks.push({\n      json: {\n        ...task.json,\n        scheduled_time: scheduledTime,\n        overdue_minutes: (currentHour - scheduledHour) * 60 + (currentMinute - scheduledMinute)\n      }\n    });\n  }\n}\n\nreturn overdueTasks;"
+      },
+      "id": "8b430430-d01a-44d5-9fdc-dc8bbb2fef1f",
+      "name": "Filtruj zadania po terminie",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "has-overdue-tasks",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1c7ca160-1122-4272-8a21-31c55f626c71",
+      "name": "Sprawdź czy są zadania",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "-1001824126408",
+        "text": "=⏰ Zadanie po terminie!\n\n📌 **{{ $json['tytuł zadania'] || $json.title }}**\n\n⏱️ Zaplanowana godzina: {{ $json['godzina wykonania'] || $json.scheduled_time }}\n📊 Priorytet: {{ $json.priorytet || $json.priority || 'medium' }}\n⏳ Szacowany czas: {{ $json['czas wykoania'] || $json.estimated_time || '?' }} min\n\n{{ $json['opis zadania'] || $json.description ? `📝 Opis: ${$json['opis zadania'] || $json.description}` : '' }}\n\n🔗 [Otwórz w Excelu](https://docs.google.com/spreadsheets/d/11R8VMzsNy5LSdsL_6TRjbKXRGt6Xqt1EnbC7K_9OKSs/edit#gid=0)",
+        "additionalFields": {
+          "parse_mode": "Markdown",
+          "message_thread_id": 35
+        }
+      },
+      "id": "92580d4e-4a1b-49bc-8972-13a8481dbe5c",
+      "name": "Telegram - Wyślij powiadomienie",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        0
+      ],
+      "webhookId": "d9b6d266-f6d4-4390-bfe2-199001b5cab7",
+      "credentials": {
+        "telegramApi": {
+          "id": "DRoG4T6BkqkIkIHV",
+          "name": "Telegram Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8b4994b0-c8cb-4e3f-a232-6b92eb1ab8bd",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets - Pobierz wszystkie zadania": {
+      "main": [
+        [
+          {
+            "node": "Filtruj zadania po terminie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtruj zadania po terminie": {
+      "main": [
+        [
+          {
+            "node": "Sprawdź czy są zadania",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprawdź czy są zadania": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Wyślij powiadomienie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Pobierz wszystkie zadania",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "ff3ca2b2-cf01-41af-9e82-01185e512c0a",
+  "meta": {
+    "instanceId": "51c4d31089981c0ad199e2af1e24027eab07b58a3252314b7227e08b09928d30"
+  },
+  "id": "kQn_w07NrXk4Ok6WreWjm",
+  "tags": []
+}
