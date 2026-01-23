@@ -1,0 +1,28 @@
+{
+  "name": "n8n",
+  "description": "n8n workflow automation platform",
+  "repository": "https://github.com/PiotrSobiecki/n8n",
+  "keywords": ["n8n", "automation", "workflow", "nodejs"],
+  "stack": "nodejs",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "env": {
+    "N8N_HOST": {
+      "required": false,
+      "value": "0.0.0.0"
+    },
+    "N8N_PROTOCOL": {
+      "required": false,
+      "value": "https"
+    }
+  }
+}
