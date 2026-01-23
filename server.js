@@ -13,8 +13,8 @@ const host = process.env.N8N_HOST || '0.0.0.0';
 console.log(`Starting n8n on ${host}:${port}...`);
 console.log(`Access n8n at: http://localhost:${port}`);
 
-// Start n8n directly
-const n8n = exec(`npx n8n start --port ${port} --host ${host}`, {
+// Start n8n directly (n8n uses environment variables, not CLI flags)
+const n8n = exec(`npx n8n start`, {
   env: {
     ...process.env,
     N8N_PORT: port.toString(),
