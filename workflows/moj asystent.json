@@ -12,7 +12,7 @@
         "responses": {
           "values": [
             {
-              "content": "={{ $('Code in JavaScript2').item.json.originalData.text }}\n\nPowyżej znajduje się TRANSKRYPCJA głosowa z listą zakupów.\nPracuj WYŁĄCZNIE na tym tekście. Traktuj go jak \"prawdę objawioną\" – nie poprawiaj go, nie domyślaj się, co użytkownik „pewnie miał na myśli”.\n\nTwoje zadanie:\n1. Rozpoznaj intencję: DODANIE produktów czy USUNIĘCIE produktów z listy zakupów.\n2. Wyodrębnij z transkrypcji wszystkie słowa/frazy, które wyglądają na nazwy produktów.\n3. Dla każdego produktu spróbuj wyciągnąć ilość, jednostkę, opis i ewentualne uwagi.\n\n**ROZPOZNAWANIE INTENCJI:**\n\n**INTENCJA: DODANIE produktów**\nJeśli wiadomość zawiera:\n- Słowa: dodaj, kup, potrzebuję, chcę, lista zakupów, zakupy\n- Wymienione produkty bez słów wskazujących na usunięcie\n- Brak słów wskazujących na usunięcie (usuń, wykreśl, nie kupuj, nie potrzebuję, skreśl, usuń z listy)\n\n**INTENCJA: USUNIĘCIE produktów**\nJeśli wiadomość zawiera:\n- Słowa: usuń, wykreśl, skreśl, nie kupuj, nie potrzebuję, usuń z listy, nie kupować, odwołaj\n- Wskazanie na produkty, które mają być usunięte\n- Negację w kontekście zakupów (np. \"nie kupuj chleba\", \"nie potrzebuję mleka\")\n\nDZIELENIE NA WIELE PRODUKTÓW Z JEDNEGO ZDANIA:\n- Jeśli w jednym zdaniu występuje kilka produktów oddzielonych przecinkami lub spójnikami (\"i\", \"oraz\", \"lub\"), potraktuj KAŻDY z nich jako osobny produkt.\n- Przykład:\n  Transkrypcja: \"Worki na śmieci, gąbki do mycia naczyń.\"\n  Odpowiedź MUSI zawierać DWA produkty:\n\n  {\n    \"action\": \"add\",\n    \"products\": [\n      { \"lp\": 1, \"name\": \"worki na śmieci\", \"quantity\": 1, \"unit\": \"szt\", \"description\": \"\", \"notes\": \"\" },\n      { \"lp\": 2, \"name\": \"gąbki do mycia naczyń\", \"quantity\": 1, \"unit\": \"szt\", \"description\": \"\", \"notes\": \"\" }\n    ],\n    \"summary\": \"Lista zakupów: worki na śmieci, gąbki do mycia naczyń\"\n  }\n\n- Przykład USUWANIA:\n  Transkrypcja: \"Usuń chleb i mleko z listy zakupów.\"\n  Odpowiedź:\n\n  {\n    \"action\": \"remove\",\n    \"products\": [\n      { \"lp\": 1, \"name\": \"chleb\", \"quantity\": 1, \"unit\": \"szt\", \"description\": \"\", \"notes\": \"\" },\n      { \"lp\": 2, \"name\": \"mleko\", \"quantity\": 1, \"unit\": \"szt\", \"description\": \"\", \"notes\": \"\" }\n    ],\n    \"summary\": \"Usunięcie z listy: chleb, mleko\"\n  }\n\n- NIE WOLNO pomijać żadnego produktu, który występuje w tekście, nawet jeśli zdanie jest krótkie lub wygląda mało „typowo”.\n\nBARDZO WAŻNE ZASADY (BEZWZGLĘDNIE PRZESTRZEGAJ):\n- **NIE WOLNO** dodawać produktów, które NIE WYSTĘPUJĄ jako słowa w transkrypcji.\n- Każdy produkt w polu \"name\" musi mieć swój odpowiednik jako słowo/fraza w tekście wejściowym.\n- **NIE WOLNO** zamieniać jednego słowa na inne „bardziej sensowne”.\n  - Jeśli w tekście jest „Masuo”, to w JSON masz wpisać `\"name\": \"Masuo\"`, a NIE „masło”.\n  - Jeśli jakieś słowo brzmi dziwnie albo nie jesteś pewien, i tak wpisz je dokładnie tak, jak w transkrypcji (poza prostą normalizacją do mianownika / liczby pojedynczej, ale bez zmiany rdzenia).\n- **NIE WOLNO** zgadywać produktów „z głowy\", na podstawie:\n  - typowych list zakupów,\n  - zdrowego rozsądku,\n  - tego, co „często się kupuje razem\".\n- Jeśli w tekście jest tylko jedno dziwne słowo i nie wiesz, co to jest, potraktuj je jako nazwę produktu i wpisz je dokładnie tak, jak brzmi.\n- Jeśli naprawdę nie znajdujesz żadnych oczywistych produktów, zwróć po prostu `\"products\": []`.\n\nZasady ekstrakcji:\n- Każdy produkt powinien mieć unikalny numer porządkowy (lp), zaczynający się od 1 i rosnący o 1.\n- Jeśli produkt ma ilość (np. „2 chleby\", „kilogram mąki\"), wyodrębnij ją do `quantity`.\n- Jeśli produkt ma jednostkę (np. „kg\", „szt\", „litr\"), wyodrębnij ją do `unit`.\n- Jeśli pojawiają się dodatkowe informacje (marka, rodzaj, smak itp.), wpisz je w `description`.\n- **UWAGI (notes)**: Jeśli są dodatkowe wskazówki typu „kup w Lidlu\", „nie kupuj jako UHT\", „tylko marka Y\", przenieś je do pola `notes`.\n\nZwróć WYŁĄCZNIE poprawny JSON w formacie:\n\n{\n  \"action\": \"add\" | \"remove\",\n  \"products\": [\n    {\n      \"lp\": 1,\n      \"name\": \"dokładna nazwa z transkrypcji (bez zgadywania)\",\n      \"quantity\": 2,\n      \"unit\": \"szt\",\n      \"description\": \"opcjonalny opis\",\n      \"notes\": \"opcjonalne uwagi (np. 'kup w lidlu', 'nie kupuj jako X')\"\n    }\n  ],\n  \"summary\": \"krótkie podsumowanie listy, bazujące wyłącznie na faktycznych produktach\"\n}\n\nDodatkowe zasady:\n- Pole `action` musi być \"add\" (dodanie) lub \"remove\" (usunięcie).\n- Jeśli intencja jest niejasna, domyślnie ustaw `action: \"add\"`.\n- Jeśli ilość nie jest podana, ustaw `quantity: 1`.\n- Jeśli jednostka nie jest podana, ustaw `unit: \"szt\"`.\n- Nazwę możesz znormalizować do mianownika liczby pojedynczej (np. „chleb\" zamiast „chleby\"), ALE:\n  - nie zamieniaj słowa na inne (np. „Masuo\" NIE może stać się „masło\").\n- Pole `notes` wypełniaj tylko wtedy, gdy w transkrypcji są wyraźne uwagi dotyczące zakupu.\n- NIE dodawaj żadnych komentarzy ani tekstu poza jednym obiektem JSON.\n"
+              "content": "={{ $json.polaczonyTekst }}\n\nPowyżej znajduje się TRANSKRYPCJA głosowa z listą zakupów.\nPracuj WYŁĄCZNIE na tym tekście. Traktuj go jak \"prawdę objawioną\" – nie poprawiaj go, nie domyślaj się, co użytkownik „pewnie miał na myśli”.\n\nTwoje zadanie:\n1. Rozpoznaj intencję: DODANIE produktów czy USUNIĘCIE produktów z listy zakupów.\n2. Wyodrębnij z transkrypcji wszystkie słowa/frazy, które wyglądają na nazwy produktów.\n3. Dla każdego produktu spróbuj wyciągnąć ilość, jednostkę, opis i ewentualne uwagi.\n\n**ROZPOZNAWANIE INTENCJI:**\n\n**INTENCJA: DODANIE produktów**\nJeśli wiadomość zawiera:\n- Słowa: dodaj, kup, potrzebuję, chcę, lista zakupów, zakupy\n- Wymienione produkty bez słów wskazujących na usunięcie\n- Brak słów wskazujących na usunięcie (usuń, wykreśl, nie kupuj, nie potrzebuję, skreśl, usuń z listy)\n\n**INTENCJA: USUNIĘCIE produktów**\nJeśli wiadomość zawiera:\n- Słowa: usuń, wykreśl, skreśl, nie kupuj, nie potrzebuję, usuń z listy, nie kupować, odwołaj\n- Wskazanie na produkty, które mają być usunięte\n- Negację w kontekście zakupów (np. \"nie kupuj chleba\", \"nie potrzebuję mleka\")\n\nDZIELENIE NA WIELE PRODUKTÓW Z JEDNEGO ZDANIA:\n- Jeśli w jednym zdaniu występuje kilka produktów oddzielonych przecinkami lub spójnikami (\"i\", \"oraz\", \"lub\"), potraktuj KAŻDY z nich jako osobny produkt.\n- Przykład:\n  Transkrypcja: \"Worki na śmieci, gąbki do mycia naczyń.\"\n  Odpowiedź MUSI zawierać DWA produkty:\n\n  {\n    \"action\": \"add\",\n    \"products\": [\n      { \"lp\": 1, \"name\": \"worki na śmieci\", \"quantity\": 1, \"unit\": \"szt\", \"description\": \"\", \"notes\": \"\" },\n      { \"lp\": 2, \"name\": \"gąbki do mycia naczyń\", \"quantity\": 1, \"unit\": \"szt\", \"description\": \"\", \"notes\": \"\" }\n    ],\n    \"summary\": \"Lista zakupów: worki na śmieci, gąbki do mycia naczyń\"\n  }\n\n- Przykład USUWANIA:\n  Transkrypcja: \"Usuń chleb i mleko z listy zakupów.\"\n  Odpowiedź:\n\n  {\n    \"action\": \"remove\",\n    \"products\": [\n      { \"row_number\": 1, \"name\": \"chleb\", \"quantity\": 1, \"unit\": \"szt\", \"description\": \"\", \"notes\": \"\" },\n      { \"row_number\": 2, \"name\": \"mleko\", \"quantity\": 1, \"unit\": \"szt\", \"description\": \"\", \"notes\": \"\" }\n    ],\n    \"summary\": \"Usunięcie z listy: chleb, mleko\"\n  }\n\n- NIE WOLNO pomijać żadnego produktu, który występuje w tekście, nawet jeśli zdanie jest krótkie lub wygląda mało „typowo”.\n\nBARDZO WAŻNE ZASADY (BEZWZGLĘDNIE PRZESTRZEGAJ):\n- **NIE WOLNO** dodawać produktów, które NIE WYSTĘPUJĄ jako słowa w transkrypcji.\n- Każdy produkt w polu \"name\" musi mieć swój odpowiednik jako słowo/fraza w tekście wejściowym.\n- **NIE WOLNO** zamieniać jednego słowa na inne „bardziej sensowne”.\n  - Jeśli w tekście jest „Masuo”, to w JSON masz wpisać `\"name\": \"Masuo\"`, a NIE „masło”.\n  - Jeśli jakieś słowo brzmi dziwnie albo nie jesteś pewien, i tak wpisz je dokładnie tak, jak w transkrypcji (poza prostą normalizacją do mianownika / liczby pojedynczej, ale bez zmiany rdzenia).\n- **NIE WOLNO** zgadywać produktów „z głowy\", na podstawie:\n  - typowych list zakupów,\n  - zdrowego rozsądku,\n  - tego, co „często się kupuje razem\".\n- Jeśli w tekście jest tylko jedno dziwne słowo i nie wiesz, co to jest, potraktuj je jako nazwę produktu i wpisz je dokładnie tak, jak brzmi.\n- Jeśli naprawdę nie znajdujesz żadnych oczywistych produktów, zwróć po prostu `\"products\": []`.\n\nZasady ekstrakcji:\n- Każdy produkt powinien mieć unikalny numer porządkowy (lp), zaczynający się od 1 i rosnący o 1.\n- Jeśli produkt ma ilość (np. „2 chleby\", „kilogram mąki\"), wyodrębnij ją do `quantity`.\n- Jeśli produkt ma jednostkę (np. „kg\", „szt\", „litr\"), wyodrębnij ją do `unit`.\n- Jeśli pojawiają się dodatkowe informacje (marka, rodzaj, smak itp.), wpisz je w `description`.\n- **UWAGI (notes)**: Jeśli są dodatkowe wskazówki typu „kup w Lidlu\", „nie kupuj jako UHT\", „tylko marka Y\", przenieś je do pola `notes`.\n\nZwróć WYŁĄCZNIE poprawny JSON w formacie:\n\n{\n  \"action\": \"add\" | \"remove\",\n  \"products\": [\n    {\n      \"row_number\": 1,\n      \"name\": \"dokładna nazwa z transkrypcji (bez zgadywania)\",\n      \"quantity\": 2,\n      \"unit\": \"szt\",\n      \"description\": \"opcjonalny opis\",\n      \"notes\": \"opcjonalne uwagi (np. 'kup w lidlu', 'nie kupuj jako X')\"\n    }\n  ],\n  \"summary\": \"krótkie podsumowanie listy, bazujące wyłącznie na faktycznych produktach\"\n}\n\nDodatkowe zasady:\n- Pole `action` musi być \"add\" (dodanie) lub \"remove\" (usunięcie).\n- Jeśli intencja jest niejasna, domyślnie ustaw `action: \"add\"`.\n- Jeśli ilość nie jest podana, ustaw `quantity: 1`.\n- Jeśli jednostka nie jest podana, ustaw `unit: \"szt\"`.\n- Nazwę możesz znormalizować do mianownika liczby pojedynczej (np. „chleb\" zamiast „chleby\"), ALE:\n  - nie zamieniaj słowa na inne (np. „Masuo\" NIE może stać się „masło\").\n- Pole `notes` wypełniaj tylko wtedy, gdy w transkrypcji są wyraźne uwagi dotyczące zakupu.\n- NIE dodawaj żadnych komentarzy ani tekstu poza jednym obiektem JSON.\n"
             }
           ]
         },
@@ -22,8 +22,8 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2.1,
       "position": [
-        1184,
-        1392
+        1424,
+        1328
       ],
       "id": "4b135fe1-e0b0-47fa-900e-37e6c8e53e5c",
       "name": "OpenAI - Rozpoznaj intencję",
@@ -582,7 +582,7 @@
         "responses": {
           "values": [
             {
-              "content": "={{ $json.text }}\n\n\nPowyżej znajduje się wiadomość głosowa. Rozpoznaj intencję użytkownika:\n\n**INTENCJA 1: Oznaczenie zadania jako wykonane**\nJeśli wiadomość zawiera:\n- Słowa wskazujące na zakończenie: zrobione, wykonane, gotowe, skończone, ukończone, done, zakończone, ukończyłem, zrobiłem, skończyłem, zakończyłem, gotowe, zrobione, wykonane\n- Formy przeszłe czasowników związanych z działaniem (zrobiłem X, ukończyłem Y, skończyłem Z)\n- Wskazanie na konkretne zadanie, które zostało wykonane\n\nWtedy zwróć:\n{\n  \"intent\": \"complete_task\",\n  \"task_identifier\": \"tytuł lub nazwa zadania, które zostało wykonane (np. 'zadanie X', 'faktury', 'raport')\",\n  \"completed\": true\n}\n\n**INTENCJA 2: Dodanie produktów do listy zakupów**\nJeśli wiadomość zawiera:\n- Słowa: dodaj do listy zakupów, lista zakupów, zakupy, kup, kupić, potrzebuję, chleb, mleko, masło, jajka, owoce, warzywa, produkty spożywcze, produkty przemysłowe\n- Wymienione produkty spożywcze lub przemysłowe (np. chleb, mleko, jajka, papier toaletowy, mydło)\n- Prośbę o dodanie produktów do zakupów\n- Brak wskazania na zadania do wykonania\n\nWtedy zwróć:\n{\n  \"intent\": \"shopping_list\",\n  \"task_identifier\": \"\",\n  \"completed\": false\n}\n\n**INTENCJA 3: Lista nowych zadań do zaplanowania**\nJeśli wiadomość zawiera:\n- Listę zadań do wykonania (np. 'muszę zrobić X, Y, Z', 'dodaj mi zadanie do zrobienia na taką datę i taki temat')\n- Planowanie na dzisiaj/jutro/konkretną datę\n- Nowe zadania do dodania z terminem wykonania\n- Brak wskazania na zakończenie istniejącego zadania i brak produktów spożywczych/przemysłowych\n\nWtedy zwróć:\n{\n  \"intent\": \"new_task\",\n  \"task_identifier\": \"\",\n  \"completed\": false\n}\n\n**WAŻNE:**\n- Jeśli wiadomość zawiera BOTH (nowe zadania + oznaczenie wykonania), traktuj jako \"complete_task\" tylko jeśli jest wyraźne wskazanie na zakończenie konkretnego zadania\n- Jeśli wiadomość zawiera produkty spożywcze/przemysłowe i słowa związane z zakupami, traktuj jako \"shopping_list\"\n- Jeśli wiadomość zawiera zadania z datą/terminem wykonania, traktuj jako \"new_task\"\n- Jeśli nie jesteś pewien, ustaw intent=\"new_task\"\n- task_identifier powinien być konkretny i jednoznaczny (tytuł zadania, nie ogólne słowa)\n\nZwróć wyłącznie poprawny JSON, bez dodatkowych opisów, komentarzy ani markdown.\n"
+              "content": "={{ $json.text }}\n\n\nPowyżej znajduje się wiadomość głosowa. Rozpoznaj intencję użytkownika:\n\n**INTENCJA 1: Oznaczenie zadania jako wykonane**\nJeśli wiadomość zawiera:\n- Słowa wskazujące na zakończenie: zrobione, wykonane, gotowe, skończone, ukończone, done, zakończone, ukończyłem, zrobiłem, skończyłem, zakończyłem, gotowe, zrobione, wykonane\n- Formy przeszłe czasowników związanych z działaniem (zrobiłem X, ukończyłem Y, skończyłem Z)\n- Wskazanie na konkretne zadanie, które zostało wykonane\n\nWtedy zwróć:\n{\n  \"intent\": \"complete_task\",\n  \"task_identifier\": \"tytuł lub nazwa zadania, które zostało wykonane (np. 'zadanie X', 'faktury', 'raport')\",\n  \"completed\": true\n}\n\n**INTENCJA 2: Dodanie produktów do listy zakupów**\nJeśli wiadomość zawiera:\n- Słowa: dodaj do listy zakupów, lista zakupów, zakupy, kup, kupić, potrzebuję, chleb, mleko, masło, jajka, owoce, warzywa, produkty spożywcze, produkty przemysłowe\n- Wymienione produkty spożywcze lub przemysłowe (np. chleb, mleko, jajka, papier toaletowy, mydło)\n- Prośbę o dodanie produktów do zakupów\n- Brak wskazania na zadania do wykonania\n\nWtedy zwróć:\n{\n  \"intent\": \"shopping_list\",\n  \"task_identifier\": \"\",\n  \"completed\": false\n}\n\n**INTENCJA 3: Usunięcie produktów z listy zakupów**\nJeśli wiadomość zawiera:\n- Słowa: usuń z listy, wykreśl, skreśl, usuń zakupy, wyrzuć z listy, usuń wszystko, wyczyść listę, skasuj, wymaż\n- Prośbę o usunięcie konkretnych produktów z listy zakupów (np. \"usuń chleb z listy\", \"wykreśl mleko\")\n- Prośbę o usunięcie wszystkich produktów (np. \"usuń wszystko z listy\", \"wyczyść całą listę zakupów\")\n- Informację że produkty zostały już kupione (np. \"kupiłem chleb\", \"mam już mleko\")\n\nWtedy zwróć:\n{\n  \"intent\": \"shopping_list\",\n  \"task_identifier\": \"\",\n  \"completed\": false\n}\n\n**Uwaga:** Rozróżnij między:\n- \"shopping_list\" - dodawanie produktów (kup, potrzebuję, dodaj)\n- \"shopping_list_remove\" - usuwanie produktów (usuń, wykreśl, skreśl, kupiłem, mam już)\n\n**INTENCJA 4: Lista nowych zadań do zaplanowania**\nJeśli wiadomość zawiera:\n- Listę zadań do wykonania (np. 'muszę zrobić X, Y, Z', 'dodaj mi zadanie do zrobienia na taką datę i taki temat')\n- Planowanie na dzisiaj/jutro/konkretną datę\n- Nowe zadania do dodania z terminem wykonania\n- Brak wskazania na zakończenie istniejącego zadania i brak produktów spożywczych/przemysłowych\n\nWtedy zwróć:\n{\n  \"intent\": \"new_task\",\n  \"task_identifier\": \"\",\n  \"completed\": false\n}\n\n**WAŻNE:**\n- Jeśli wiadomość zawiera BOTH (nowe zadania + oznaczenie wykonania), traktuj jako \"complete_task\" tylko jeśli jest wyraźne wskazanie na zakończenie konkretnego zadania\n- Jeśli wiadomość zawiera produkty spożywcze/przemysłowe i słowa związane z zakupami, traktuj jako \"shopping_list\"\n- Jeśli wiadomość zawiera zadania z datą/terminem wykonania, traktuj jako \"new_task\"\n- Jeśli nie jesteś pewien, ustaw intent=\"new_task\"\n- task_identifier powinien być konkretny i jednoznaczny (tytuł zadania, nie ogólne słowa)\n\nZwróć wyłącznie poprawny JSON, bez dodatkowych opisów, komentarzy ani markdown.\n"
             }
           ]
         },
@@ -806,7 +806,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        960,
+        912,
         1200
       ],
       "id": "25aad949-07ed-46f4-94eb-d93aea1f5e4c",
@@ -863,65 +863,24 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1888,
-        1392
+        1952,
+        1408
       ],
       "id": "d464fa6f-31c1-44ce-9cd3-3c9ad89677f2",
       "name": "If1"
     },
     {
       "parameters": {
-        "jsCode": "// Parsuj odpowiedź z OpenAI GPT dla listy zakupów\n// Obsługuje akcje: add (dodanie produktów), remove (usunięcie produktów)\nconst item = $input.first();\nlet text = item.json?.output?.[0]?.content?.[0]?.text || item.json.text || '';\n\nif (typeof text !== \"string\") {\n  return [{ json: { action: 'add', products: [], summary: 'Błąd: nie znaleziono tekstu w odpowiedzi' } }];\n}\n\n// Wyczyść tekst z markdown code blocks\ntext = text.trim().replace(/^```(?:json)?\\s*/i, '').replace(/```$/i, '').trim();\n\n// Wyciągnij JSON z tekstu\nconst match = text.match(/\\{[\\s\\S]*\\}/);\nif (!match) {\n  return [{ json: { action: 'add', products: [], summary: 'Błąd: nie znaleziono JSON w odpowiedzi' } }];\n}\n\ntry {\n  const parsed = JSON.parse(match[0]);\n  \n  // Walidacja akcji - obsługiwane wartości: add, remove\n  const validActions = ['add', 'remove'];\n  if (!parsed.action || !validActions.includes(parsed.action)) {\n    // Jeśli akcja nie jest rozpoznana, spróbuj odgadnąć na podstawie zawartości\n    const lowerText = text.toLowerCase();\n    if (lowerText.includes('usuń') || lowerText.includes('wykreśl') || lowerText.includes('skreśl') || \n        lowerText.includes('nie kupuj') || lowerText.includes('nie potrzebuję') || \n        lowerText.includes('usuń z listy') || lowerText.includes('odwołaj')) {\n      parsed.action = 'remove';\n    } else {\n      parsed.action = 'add'; // Domyślnie dodawanie\n    }\n  }\n  \n  // Walidacja i normalizacja produktów\n  const products = (parsed.products || []).map((product, index) => {\n    return {\n      lp: product.lp || (index + 1),\n      name: (product.name || '').trim() || `Produkt ${index + 1}`,\n      quantity: parseInt(product.quantity) || 1,\n      unit: (product.unit || 'szt').trim(),\n      description: (product.description || '').trim(),\n      notes: (product.notes || '').trim()\n    };\n  });\n  \n  // Upewnij się, że wszystkie wymagane pola są obecne\n  return [{ \n    json: {\n      action: parsed.action || 'add',\n      products: products,\n      summary: (parsed.summary || '').trim() || `${parsed.action === 'remove' ? 'Usunięcie' : 'Dodanie'} ${products.length} produkt${products.length !== 1 ? 'ów' : 'u'}`\n    }\n  }];\n} catch (error) {\n  // W przypadku błędu parsowania, zwróć domyślną odpowiedź\n  console.error('Błąd parsowania JSON:', error.message);\n  return [{ \n    json: { \n      action: 'add', \n      products: [], \n      summary: `Błąd parsowania: ${error.message}` \n    } \n  }];\n}\n"
+        "jsCode": "// Parsuj odpowiedź z OpenAI GPT dla listy zakupów\n// Obsługuje akcje: add (dodanie produktów), remove (usunięcie produktów)\nconst item = $input.first();\nlet text = item.json?.output?.[0]?.content?.[0]?.text || item.json.text || '';\n\nif (typeof text !== \"string\") {\n  return [{ json: { action: 'add', products: [], summary: 'Błąd: nie znaleziono tekstu w odpowiedzi' } }];\n}\n\n// Wyczyść tekst z markdown code blocks\ntext = text.trim().replace(/^```(?:json)?\\s*/i, '').replace(/```$/i, '').trim();\n\n// Wyciągnij JSON z tekstu\nconst match = text.match(/\\{[\\s\\S]*\\}/);\nif (!match) {\n  return [{ json: { action: 'add', products: [], summary: 'Błąd: nie znaleziono JSON w odpowiedzi' } }];\n}\n\ntry {\n  const parsed = JSON.parse(match[0]);\n  \n  // Walidacja akcji - obsługiwane wartości: add, remove\n  const validActions = ['add', 'remove'];\n  if (!parsed.action || !validActions.includes(parsed.action)) {\n    const lowerText = text.toLowerCase();\n    if (lowerText.includes('usuń') || lowerText.includes('wykreśl') || lowerText.includes('skreśl') || \n        lowerText.includes('nie kupuj') || lowerText.includes('nie potrzebuję') || \n        lowerText.includes('usuń z listy') || lowerText.includes('odwołaj')) {\n      parsed.action = 'remove';\n    } else {\n      parsed.action = 'add';\n    }\n  }\n  \n  // Walidacja i normalizacja produktów\n  const products = (parsed.products || []).map((product, index) => {\n    // Użyj row_number z GPT, jeśli istnieje, inaczej oblicz z lp\n    const rowNumber = product.row_number || product.rowNumber || (product.lp ? product.lp + 1 : index + 2);\n    const lp = product.lp || product.row_number || (index + 1);\n    \n    return {\n      lp: lp,\n      row_number: rowNumber,\n      rowNumber: rowNumber,\n      name: (product.name || '').trim() || `Produkt ${index + 1}`,\n      quantity: parseInt(product.quantity) || 1,\n      unit: (product.unit || 'szt').trim(),\n      description: (product.description || '').trim(),\n      notes: (product.notes || '').trim()\n    };\n  });\n  \n  // Oblicz min/max row_number do usuwania wielu wierszy\n  const allRowNumbers = products.map(p => p.row_number);\n  const minRowNumber = allRowNumbers.length > 0 ? Math.min(...allRowNumbers) : 0;\n  const maxRowNumber = allRowNumbers.length > 0 ? Math.max(...allRowNumbers) : 0;\n  \n  return [{ \n    json: {\n      action: parsed.action || 'add',\n      products: products,\n      summary: (parsed.summary || '').trim() || `${parsed.action === 'remove' ? 'Usunięcie' : 'Dodanie'} ${products.length} produkt${products.length !== 1 ? 'ów' : 'u'}`,\n      // Dodatkowe pola do usuwania\n      startRowNumber: minRowNumber,\n      endRowNumber: maxRowNumber,\n      rowsCount: products.length,\n      allRowNumbers: allRowNumbers\n    }\n  }];\n} catch (error) {\n  console.error('Błąd parsowania JSON:', error.message);\n  return [{ \n    json: { \n      action: 'add', \n      products: [], \n      summary: `Błąd parsowania: ${error.message}`,\n      startRowNumber: 0,\n      endRowNumber: 0,\n      rowsCount: 0,\n      allRowNumbers: []\n    } \n  }];\n}\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1600,
-        1392
+        1744,
+        1328
       ],
       "id": "25f78558-d1fd-4aae-b108-8cce8b3ec7ef",
       "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "documentId": {
-          "__rl": true,
-          "value": "1Xtq-ZV8jDUnZkqCeTt5cmniAiregV9iGRulUyq19Zl4",
-          "mode": "list",
-          "cachedResultName": "lista zakupów",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Xtq-ZV8jDUnZkqCeTt5cmniAiregV9iGRulUyq19Zl4/edit?usp=drivesdk"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Arkusz1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Xtq-ZV8jDUnZkqCeTt5cmniAiregV9iGRulUyq19Zl4/edit#gid=0"
-        },
-        "filtersUI": {
-          "values": [
-            {
-              "lookupColumn": "nazwa produktu",
-              "lookupValue": "={{ $json.products[0].name }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
-      "position": [
-        2176,
-        1584
-      ],
-      "id": "d31e9456-bad4-4fb4-aa2e-7db78d9ff435",
-      "name": "Get row(s) in sheet",
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "PEOH00KRBvXg955P",
-          "name": "Google Sheets @sobiecki.org"
-        }
-      }
     },
     {
       "parameters": {
@@ -940,13 +899,14 @@
           "cachedResultName": "Arkusz1",
           "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Xtq-ZV8jDUnZkqCeTt5cmniAiregV9iGRulUyq19Zl4/edit#gid=0"
         },
-        "startIndex": "={{ $json.row_number }}"
+        "startIndex": "={{ $json.startRowNumber }}",
+        "numberToDelete": "={{ $json.rowsCount }}"
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2464,
-        1584
+        2224,
+        1536
       ],
       "id": "1740da2c-421e-49fa-a038-b007d9e63a7f",
       "name": "Delete rows or columns from sheet",
@@ -960,7 +920,7 @@
     {
       "parameters": {
         "chatId": "-1001824126408",
-        "text": "=❌ Artykuł {{ $('Get row(s) in sheet').item.json['nazwa produktu'] }} został pomyślnie usunięty z listy zakupów.",
+        "text": "=❌ Artykuł(y) \n\n{{ $json.lista }} \n\nzostał(y) pomyślnie usunięty(e) z listy zakupów.",
         "additionalFields": {
           "parse_mode": "=Markdown",
           "message_thread_id": 98
@@ -981,70 +941,68 @@
           "name": "Telegram account 2"
         }
       }
-    }
-  ],
-  "pinData": {
-    "Telegram Trigger": [
-      {
-        "json": {
-          "update_id": 455170999,
-          "message": {
-            "message_id": 217,
-            "from": {
-              "id": 1859123369,
-              "is_bot": false,
-              "first_name": "Pjoter",
-              "username": "Hodler_NFT",
-              "language_code": "pl"
-            },
-            "chat": {
-              "id": -1001824126408,
-              "title": "Mój Asystent",
-              "is_forum": true,
-              "type": "supergroup"
-            },
-            "date": 1769087615,
-            "message_thread_id": 98,
-            "reply_to_message": {
-              "message_id": 98,
-              "from": {
-                "id": 1859123369,
-                "is_bot": false,
-                "first_name": "Pjoter",
-                "username": "Hodler_NFT",
-                "language_code": "pl"
-              },
-              "chat": {
-                "id": -1001824126408,
-                "title": "Mój Asystent",
-                "is_forum": true,
-                "type": "supergroup"
-              },
-              "date": 1768850031,
-              "message_thread_id": 98,
-              "forum_topic_created": {
-                "name": "Lista zakupów",
-                "icon_color": 16766590,
-                "icon_custom_emoji_id": "5431492767249342908"
-              },
-              "is_topic_message": true
-            },
-            "voice": {
-              "duration": 6,
-              "mime_type": "audio/ogg",
-              "file_id": "AwACAgQAAx0CbLn1yAAD2WlyIn_KkxbJU75riV9dwsPjWG_2AAJBHgAC1PqQU-pJa6i9MU5mOAQ",
-              "file_unique_id": "AgADQR4AAtT6kFM",
-              "file_size": 23883
-            },
-            "is_topic_message": true
-          }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Xtq-ZV8jDUnZkqCeTt5cmniAiregV9iGRulUyq19Zl4",
+          "mode": "list",
+          "cachedResultName": "lista zakupów",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Xtq-ZV8jDUnZkqCeTt5cmniAiregV9iGRulUyq19Zl4/edit?usp=drivesdk"
         },
-        "pairedItem": {
-          "item": 0
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Arkusz1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Xtq-ZV8jDUnZkqCeTt5cmniAiregV9iGRulUyq19Zl4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1088,
+        1312
+      ],
+      "id": "4bcb1fa7-572e-4d29-88a9-16871f7c8541",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PEOH00KRBvXg955P",
+          "name": "Google Sheets @sobiecki.org"
         }
       }
-    ]
-  },
+    },
+    {
+      "parameters": {
+        "jsCode": "const allRows = $input.all();\n\n// Stwórz listę tekstową z row_number\nconst lista = allRows.map(item => {\n  const rowNum = item.json.row_number;\n  const nazwa = item.json[\"nazwa produktu\"];\n  const ilosc = item.json[\"ilość\"];\n  const status = item.json.status;\n  return `${rowNum}. ${nazwa} - ${ilosc} (${status})`;\n}).join('\\n');\n\nconst poprzedniTekst = $('Code in JavaScript2').first().json.originalData.text;\n\nreturn {\n  json: {\n    lista: lista,\n    poprzedniTekst: poprzedniTekst,\n    polaczonyTekst: `${poprzedniTekst}\\n\\n${lista}`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        1392
+      ],
+      "id": "69054e4d-1dc0-46b3-869e-954bcd73ebd7",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const summary = $('Code in JavaScript').first().json.summary;\n\n// Usuń prefix \"Usunięcie z listy:\" i podziel po przecinkach\nconst cleanText = summary.replace(/^.*?:\\s*/, ''); // Usuwa wszystko do dwukropka\nconst items = cleanText.split(',').map(item => item.trim());\n\n// Stwórz numerowaną listę\nconst lista = items.map((item, index) => `${index + 1}. ${item}`).join('\\n');\n\nreturn {\n  json: {\n    lista: lista\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2448,
+        1552
+      ],
+      "id": "202a29ec-3072-4b96-885f-fa833a4c6798",
+      "name": "Code in JavaScript5"
+    }
+  ],
+  "pinData": {},
   "connections": {
     "OpenAI - Rozpoznaj intencję": {
       "main": [
@@ -1260,7 +1218,7 @@
       "main": [
         [
           {
-            "node": "OpenAI - Rozpoznaj intencję",
+            "node": "Get row(s) in sheet1",
             "type": "main",
             "index": 0
           }
@@ -1289,7 +1247,7 @@
       "main": [
         [
           {
-            "node": "Get row(s) in sheet",
+            "node": "Delete rows or columns from sheet",
             "type": "main",
             "index": 0
           }
@@ -1314,18 +1272,40 @@
         ]
       ]
     },
-    "Get row(s) in sheet": {
+    "Delete rows or columns from sheet": {
       "main": [
         [
           {
-            "node": "Delete rows or columns from sheet",
+            "node": "Code in JavaScript5",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Delete rows or columns from sheet": {
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Rozpoznaj intencję",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
       "main": [
         [
           {
@@ -1342,7 +1322,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "378803bb-dcca-4dd5-8b4f-2adc5ef26a99",
+  "versionId": "7720b086-b82f-489d-965c-1d7681671c39",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "51c4d31089981c0ad199e2af1e24027eab07b58a3252314b7227e08b09928d30"
