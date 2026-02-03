@@ -22,14 +22,14 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2.1,
       "position": [
-        1424,
-        1328
+        -112,
+        512
       ],
-      "id": "4b135fe1-e0b0-47fa-900e-37e6c8e53e5c",
+      "id": "c8468263-377b-4f35-ab06-de6077cf4794",
       "name": "OpenAI - Rozpoznaj intencję",
       "credentials": {
         "openAiApi": {
-          "id": "TuynrZvth4V33NQB",
+          "id": "tieAhpOSBmQOrTPn",
           "name": "OpenAi account"
         }
       }
@@ -109,18 +109,18 @@
         },
         "options": {}
       },
-      "id": "67b455c1-8b27-4251-af1c-69281bb36c47",
+      "id": "14193b60-a0fb-4cc9-970d-9df04a7add9d",
       "name": "Google Sheets - Zapisz zadania",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2464,
-        1392
+        928,
+        576
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "PEOH00KRBvXg955P",
-          "name": "Google Sheets @sobiecki.org"
+          "id": "FB1poHZRQGWU0JyZ",
+          "name": "Google Sheets moj asystent"
         }
       }
     },
@@ -131,23 +131,23 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2176,
-        1296
+        640,
+        480
       ],
-      "id": "8461164a-8c2b-46aa-a57b-70ae329038bb",
+      "id": "8b47eb5e-fa75-43b7-b118-840cf0447399",
       "name": "Code in JavaScript1"
     },
     {
       "parameters": {
         "jsCode": "// Przygotuj jedno powiadomienie z całą listą produktów\n// Pobierz dane z węzła parsującego GPT (Code in JavaScript1), nie z Google Sheets\nconst allProducts = $('Code in JavaScript1').all();\n\nif (allProducts.length === 0) {\n  throw new Error('Brak produktów do wyświetlenia');\n}\n\n// Debug - sprawdź strukturę danych\nconsole.log('Liczba produktów:', allProducts.length);\nconsole.log('Pierwszy produkt:', JSON.stringify(allProducts[0]?.json, null, 2));\n\n// Pobierz dane z pierwszego produktu (statystyki i podsumowanie)\nconst firstProduct = allProducts[0].json;\nconst summary = firstProduct.summary || '';\nconst totalProducts = firstProduct.stats?.totalProducts || allProducts.length;\nconst totalQuantity = firstProduct.stats?.totalQuantity || allProducts.reduce((sum, p) => sum + (parseFloat(p.json.quantity) || 0), 0);\n\n// Stwórz listę produktów\nconst productsList = allProducts.map((item) => {\n  const product = item.json;\n  const lp = product.lp || 0;\n  // Sprawdź różne możliwe pola z nazwą\n  const name = (product.name || product['nazwa produktu'] || product.title || '').trim();\n  if (!name || name === '') {\n    console.log('Brak nazwy produktu:', JSON.stringify(product, null, 2));\n  }\n  const quantity = product.quantity || product.ilość || 1;\n  const unit = product.unit || product.jednostka || 'szt';\n  const description = (product.description || product.uwagi || '') ? ` (${product.description || product.uwagi || ''})` : '';\n  \n  return `${lp}. ${name || 'Bez nazwy'} - ${quantity} ${unit}${description}`;\n}).filter(item => item.trim() !== '').join('\\n');\n\n// Zwróć jedno powiadomienie z całą listą\nreturn [{\n  json: {\n    message: `✅ Lista zakupów została utworzona w [Excelu](https://docs.google.com/spreadsheets/d/1Xtq-ZV8jDUnZkqCeTt5cmniAiregV9iGRulUyq19Zl4/edit?gid=0#gid=0)\\n\\n📋 Lista zakupów:\\n${productsList}\\n\\n📊 Podsumowanie:\\n• Liczba produktów: ${totalProducts}\\n• Łączna ilość: ${totalQuantity}`,\n    summary: summary,\n    totalProducts: totalProducts,\n    totalQuantity: totalQuantity\n  }\n}];"
       },
-      "id": "735f59c6-bb91-4065-b8ee-ff8ab187ce41",
+      "id": "e2a9dfed-d01f-4afd-a8dc-2220c64e6633",
       "name": "Przygotuj powiadomienie",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2464,
-        1200
+        928,
+        384
       ]
     },
     {
@@ -162,16 +162,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2688,
-        1200
+        1152,
+        384
       ],
-      "id": "85e78ea4-b5a2-466a-a138-20cccb4a1ec8",
+      "id": "6275baad-8fb5-42cf-a899-bd20db402d2e",
       "name": "Send a text message",
       "webhookId": "d9b6d266-f6d4-4390-bfe2-199001b5cab7",
       "credentials": {
         "telegramApi": {
-          "id": "ArpadXCd9obXUOb9",
-          "name": "Telegram account 2"
+          "id": "RYqcsiYsOxexfR4U",
+          "name": "Telegram account moj asystent"
         }
       }
     },
@@ -185,16 +185,16 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        -736,
-        1200
+        -2272,
+        384
       ],
-      "id": "7da6385d-67a0-4553-9e34-85a7a846f8d7",
+      "id": "cbea224a-d2ec-40a3-8853-7f42935bfd6c",
       "name": "Telegram Trigger",
       "webhookId": "b948d641-fd4b-49e6-a89a-0031f2a9bc10",
       "credentials": {
         "telegramApi": {
-          "id": "ArpadXCd9obXUOb9",
-          "name": "Telegram account 2"
+          "id": "RYqcsiYsOxexfR4U",
+          "name": "Telegram account moj asystent"
         }
       }
     },
@@ -202,13 +202,13 @@
       "parameters": {
         "jsCode": "// Parsuj odpowiedź z rozpoznania intencji\n// Obsługuje intencje: complete_task, shopping_list, new_task\nconst item = $input.first();\nlet text = item.json?.output?.[0]?.content?.[0]?.text || item.json.text || '';\n\nif (typeof text !== \"string\") {\n  return [{ json: { intent: 'new_task', task_identifier: '', completed: false } }];\n}\n\ntext = text.trim().replace(/^```(?:json)?\\s*/i, '').replace(/```$/i, '').trim();\n\nconst match = text.match(/\\{[\\s\\S]*\\}/);\nif (!match) {\n  return [{ json: { intent: 'new_task', task_identifier: '', completed: false } }];\n}\n\ntry {\n  const parsed = JSON.parse(match[0]);\n  \n  // Walidacja intencji - obsługiwane wartości: complete_task, shopping_list, new_task\n  const validIntents = ['complete_task', 'shopping_list', 'new_task'];\n  if (!parsed.intent || !validIntents.includes(parsed.intent)) {\n    // Jeśli intencja nie jest rozpoznana, spróbuj odgadnąć na podstawie zawartości\n    const lowerText = text.toLowerCase();\n    if (lowerText.includes('zakup') || lowerText.includes('kup') || lowerText.includes('lista zakupów')) {\n      parsed.intent = 'shopping_list';\n    } else if (lowerText.includes('zrobione') || lowerText.includes('wykonane') || lowerText.includes('gotowe')) {\n      parsed.intent = 'complete_task';\n    } else {\n      parsed.intent = 'new_task';\n    }\n  }\n  \n  // Upewnij się, że wszystkie wymagane pola są obecne\n  return [{ \n    json: {\n      intent: parsed.intent || 'new_task',\n      task_identifier: parsed.task_identifier || '',\n      completed: parsed.completed !== undefined ? parsed.completed : false\n    }\n  }];\n} catch (error) {\n  // W przypadku błędu parsowania, zwróć domyślną intencję\n  return [{ json: { intent: 'new_task', task_identifier: '', completed: false } }];\n}\n"
       },
-      "id": "d30a2152-f867-4789-9fad-2fc8b0309eb5",
+      "id": "614b5f58-5472-4aca-83bf-5b76f3d18762",
       "name": "Parsuj intencję",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        736,
-        1200
+        -800,
+        384
       ]
     },
     {
@@ -235,13 +235,13 @@
         },
         "options": {}
       },
-      "id": "a0035153-73f0-41ad-8340-3230bf4c02db",
+      "id": "e605be27-686c-4558-8adc-b5806bfe0902",
       "name": "Sprawdź intencję",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1248,
-        912
+        -288,
+        96
       ]
     },
     {
@@ -264,14 +264,14 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2.1,
       "position": [
-        1536,
-        816
+        0,
+        0
       ],
-      "id": "ba796a5e-3a64-428a-9923-a45c07f25dc1",
+      "id": "0b1dbd33-ec01-4be2-81fb-9139869adc33",
       "name": "OpenAI - Organizuj zadania",
       "credentials": {
         "openAiApi": {
-          "id": "TuynrZvth4V33NQB",
+          "id": "tieAhpOSBmQOrTPn",
           "name": "OpenAi account"
         }
       }
@@ -280,13 +280,13 @@
       "parameters": {
         "jsCode": "// Przygotuj listę niezakończonych zadań do wysłania do GPT\nconst allTasks = $input.all();\nconst transcribedText = $('Code in JavaScript2').first().json.text || '';\n\n// Filtruj tylko niezakończone zadania\nconst pendingTasks = [];\nfor (const task of allTasks) {\n  const status = (task.json.Status || task.json.status || '').toLowerCase().trim();\n  // Pomiń zakończone zadania\n  if (status === 'completed' || status === 'wykonane' || status === 'zakończone') {\n    continue;\n  }\n  \n  pendingTasks.push({\n    id: task.json.ID || task.json.id || '',\n    title: task.json['tytuł zadania'] || task.json.title || '',\n    description: task.json['opis zadania'] || task.json.description || '',\n    row_number: task.json.row_number || task.json.rowNumber\n  });\n}\n\nif (pendingTasks.length === 0) {\n  throw new Error('Nie znaleziono żadnych niezakończonych zadań');\n}\n\n// Zwróć dane do GPT\nreturn [{\n  json: {\n    transcribedText: transcribedText,\n    tasks: pendingTasks\n  }\n}];"
       },
-      "id": "1a1663e1-8926-46d5-a332-de58a9609e13",
+      "id": "9b7133f6-ce13-4a3b-be50-ab9f33d12395",
       "name": "Przygotuj zadania do GPT",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1888,
-        1008
+        352,
+        192
       ]
     },
     {
@@ -309,14 +309,14 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2.1,
       "position": [
-        2112,
-        1008
+        576,
+        192
       ],
-      "id": "46bda5d7-8534-48dc-9d54-8b5af6c23c9b",
+      "id": "aeee412c-b64d-4118-9736-00e1812c1140",
       "name": "OpenAI - Znajdź zadanie po ID",
       "credentials": {
         "openAiApi": {
-          "id": "TuynrZvth4V33NQB",
+          "id": "tieAhpOSBmQOrTPn",
           "name": "OpenAi account"
         }
       }
@@ -325,13 +325,13 @@
       "parameters": {
         "jsCode": "/**\n * Parsuj odpowiedź GPT i znajdź zadania do zakończenia (pojedyncze lub wszystkie)\n * Używa row_number zamiast ID\n * \n * Użycie w n8n Code node:\n * - Połączenie: OpenAI - Znajdź zadanie po row_number → Parsuj row_number → Update row in sheet\n */\n\n// Parsuj odpowiedź GPT i znajdź zadania do zakończenia\nconst gptResponse = $input.first().json;\nlet text = gptResponse?.output?.[0]?.content?.[0]?.text || gptResponse.text || '';\n\nif (typeof text !== \"string\") {\n  throw new Error('Nie znaleziono odpowiedzi z GPT');\n}\n\n// Wyczyść tekst z markdown code blocks i znaków nowej linii\ntext = text\n  .trim()\n  .replace(/^```(?:json)?\\s*/i, '')\n  .replace(/```$/i, '')\n  .replace(/\\\\n/g, '') // Usuń literały \\n\n  .trim();\n\n// Znajdź JSON w tekście (może być wiele obiektów)\nconst match = text.match(/\\{[\\s\\S]*?\\}/);\nif (!match) {\n  throw new Error(`Nie znaleziono JSON w odpowiedzi GPT. Tekst: ${text.substring(0, 200)}`);\n}\n\nlet parsed;\ntry {\n  parsed = JSON.parse(match[0]);\n} catch (parseError) {\n  // Spróbuj naprawić JSON - usuń wszystkie \\n\n  let cleanedJson = match[0].replace(/\\\\n/g, '').replace(/\\n/g, '');\n  try {\n    parsed = JSON.parse(cleanedJson);\n  } catch (e) {\n    throw new Error(`Błąd parsowania JSON: ${parseError.message}. Tekst: ${match[0].substring(0, 200)}`);\n  }\n}\n\n// Obsłuż różne formaty odpowiedzi (task_row_numbers, task_ids lub task_id dla kompatybilności)\nlet taskRowNumbers = [];\nif (parsed.task_row_numbers === 'all' || parsed.task_ids === 'all') {\n  // Wszystkie zadania\n  taskRowNumbers = 'all';\n} else if (Array.isArray(parsed.task_row_numbers)) {\n  // Nowy format - row_number jako liczby\n  taskRowNumbers = parsed.task_row_numbers.map(rn => parseInt(rn)).filter(rn => !isNaN(rn));\n} else if (Array.isArray(parsed.task_ids)) {\n  // Stary format - spróbuj użyć jako row_number (jeśli są liczby)\n  taskRowNumbers = parsed.task_ids.map(id => parseInt(id)).filter(rn => !isNaN(rn));\n} else if (parsed.task_id) {\n  // Stary format - pojedyncze ID\n  const rowNum = parseInt(parsed.task_id);\n  if (!isNaN(rowNum)) {\n    taskRowNumbers = [rowNum];\n  }\n}\n\nif (parsed.confidence === 'low' || (!taskRowNumbers || (Array.isArray(taskRowNumbers) && taskRowNumbers.length === 0))) {\n  throw new Error('GPT nie znalazł zadań z wystarczającą pewnością');\n}\n\n// Znajdź zadania w liście wszystkich zadań\nconst allTasks = $('Google Sheets - Pobierz wszystkie zadania').all();\nconst foundTasks = [];\n\nif (taskRowNumbers === 'all') {\n  // Zwróć wszystkie niezakończone zadania\n  for (const task of allTasks) {\n    const status = (task.json.Status || task.json.status || '').toLowerCase().trim();\n    if (status !== 'completed' && status !== 'wykonane' && status !== 'zakończone') {\n      foundTasks.push(task.json);\n    }\n  }\n} else {\n  // Znajdź konkretne zadania po row_number\n  for (const rowNumber of taskRowNumbers) {\n    for (const task of allTasks) {\n      const taskRowNum = parseInt(task.json.row_number || task.json.rowNumber || 0);\n      if (taskRowNum === rowNumber) {\n        foundTasks.push(task.json);\n        break;\n      }\n    }\n  }\n}\n\nif (foundTasks.length === 0) {\n  const availableRowNumbers = allTasks.map(t => t.json.row_number || t.json.rowNumber).filter(Boolean).join(', ');\n  throw new Error(`Nie znaleziono zadań. Szukane row_number: ${Array.isArray(taskRowNumbers) ? taskRowNumbers.join(', ') : 'all'}. Dostępne row_number: ${availableRowNumbers}`);\n}\n\n// Zwróć wszystkie znalezione zadania\nreturn foundTasks.map(task => ({ json: task }));\n"
       },
-      "id": "48ee50bd-f727-4692-8006-ea9124c5ceac",
+      "id": "f1281664-0b9a-4b6a-a4d5-658ca7737f14",
       "name": "Parsuj ID zadania",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2464,
-        1008
+        928,
+        192
       ]
     },
     {
@@ -352,18 +352,18 @@
         },
         "options": {}
       },
-      "id": "4b9f0692-ef2c-46fd-8531-e980675f1170",
+      "id": "91d9abd8-ef2f-4fa6-8945-d6f721ede433",
       "name": "Google Sheets - Pobierz wszystkie zadania",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        1600,
-        1008
+        64,
+        192
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "PEOH00KRBvXg955P",
-          "name": "Google Sheets @sobiecki.org"
+          "id": "FB1poHZRQGWU0JyZ",
+          "name": "Google Sheets moj asystent"
         }
       }
     },
@@ -504,15 +504,15 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2688,
-        1008
+        1152,
+        192
       ],
-      "id": "2e8307ac-fad4-451b-bf05-2c68c9664e50",
+      "id": "206accbe-d673-400e-a206-9b23229ff4d3",
       "name": "Update row in sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "PEOH00KRBvXg955P",
-          "name": "Google Sheets @sobiecki.org"
+          "id": "FB1poHZRQGWU0JyZ",
+          "name": "Google Sheets moj asystent"
         }
       }
     },
@@ -520,13 +520,13 @@
       "parameters": {
         "jsCode": "// Sprawdź czy to głosowa wiadomość i przepuść dalej\nconst item = $input.first();\n\n// Debug - zobacz co przychodzi\nconsole.log('Otrzymana wiadomość:', JSON.stringify(item.json, null, 2));\n\nconst message = item.json.message || item.json;\n\n// Sprawdź czy to głosowa wiadomość (voice)\nif (message.voice || message.audio) {\n  console.log('Znaleziono głosową wiadomość:', message.voice || message.audio);\n  return [item];\n}\n\n// Jeśli nie jest głosowa, zwróć pustą tablicę (zatrzymaj przepływ)\nconsole.log('To nie jest głosowa wiadomość, pomijam');\nreturn [];"
       },
-      "id": "e75485fc-0d78-4195-b081-cb8d08370721",
+      "id": "b6b0660f-61dd-4c6a-9628-0636c9ea4796",
       "name": "Sprawdź czy to głos1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -512,
-        1200
+        -2048,
+        384
       ]
     },
     {
@@ -535,19 +535,19 @@
         "fileId": "={{ $json.message.voice.file_id }}",
         "additionalFields": {}
       },
-      "id": "0bc90fd9-1826-4d4a-96ce-97d293f8170b",
+      "id": "29884ad0-07cd-4605-9429-a97fbc9c092b",
       "name": "Telegram - Pobierz plik głosowy1",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -288,
-        1200
+        -1824,
+        384
       ],
       "webhookId": "5f12233a-86ac-4e12-a1db-2271f95bfbfe",
       "credentials": {
         "telegramApi": {
-          "id": "DRoG4T6BkqkIkIHV",
-          "name": "Telegram Test"
+          "id": "RYqcsiYsOxexfR4U",
+          "name": "Telegram account moj asystent"
         }
       }
     },
@@ -560,14 +560,14 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2.1,
       "position": [
-        -64,
-        1200
+        -1600,
+        384
       ],
-      "id": "63949cd2-cf49-4e9d-b07d-a4fc7cf66d63",
+      "id": "6dfed71a-1625-4f56-9f2e-5b348b9e6730",
       "name": "OpenAI - Transkrypcja głosu1",
       "credentials": {
         "openAiApi": {
-          "id": "TuynrZvth4V33NQB",
+          "id": "tieAhpOSBmQOrTPn",
           "name": "OpenAi account"
         }
       }
@@ -592,14 +592,14 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2.1,
       "position": [
-        384,
-        1200
+        -1152,
+        384
       ],
-      "id": "1cab1f42-74e3-4a9c-8d71-268726bda079",
+      "id": "33e8d6de-ea7e-403a-8582-b27fddb7b222",
       "name": "OpenAI - Rozpoznaj intencję1",
       "credentials": {
         "openAiApi": {
-          "id": "TuynrZvth4V33NQB",
+          "id": "tieAhpOSBmQOrTPn",
           "name": "OpenAi account"
         }
       }
@@ -714,18 +714,18 @@
         },
         "options": {}
       },
-      "id": "7ebf16e6-3f8e-46b3-935e-e55b7bf4be76",
+      "id": "87bf195d-8e6f-4493-a9ad-5c7e81461d94",
       "name": "Google Sheets - Zapisz zadania1",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2176,
-        816
+        640,
+        0
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "PEOH00KRBvXg955P",
-          "name": "Google Sheets @sobiecki.org"
+          "id": "FB1poHZRQGWU0JyZ",
+          "name": "Google Sheets moj asystent"
         }
       }
     },
@@ -736,10 +736,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
-        1200
+        -1376,
+        384
       ],
-      "id": "37f48f27-4e1b-4af3-9a9d-a04b95ff438d",
+      "id": "bc5bc184-b3d6-4a17-b58b-1a9e6df0fec0",
       "name": "Code in JavaScript2"
     },
     {
@@ -749,10 +749,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1888,
-        816
+        352,
+        0
       ],
-      "id": "1a0a0a28-48bf-4e70-a6f1-3b654438a644",
+      "id": "5b25cc79-9984-41f5-a154-4f3b4fd33c7a",
       "name": "Code in JavaScript3"
     },
     {
@@ -766,16 +766,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2464,
-        816
+        928,
+        0
       ],
-      "id": "a38f8949-eb6f-4da9-99df-95bd4d4e4b66",
+      "id": "3dd9c846-de21-4a13-8fed-d0eadbbd82a8",
       "name": "Send a text message1",
       "webhookId": "d9b6d266-f6d4-4390-bfe2-199001b5cab7",
       "credentials": {
         "telegramApi": {
-          "id": "DRoG4T6BkqkIkIHV",
-          "name": "Telegram Test"
+          "id": "RYqcsiYsOxexfR4U",
+          "name": "Telegram account moj asystent"
         }
       }
     },
@@ -806,10 +806,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        912,
-        1200
+        -624,
+        384
       ],
-      "id": "25aad949-07ed-46f4-94eb-d93aea1f5e4c",
+      "id": "683dd756-7be3-4803-94ad-3a18832f1bab",
       "name": "If"
     },
     {
@@ -823,16 +823,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2912,
-        1008
+        1376,
+        192
       ],
-      "id": "56e8e7e7-72bc-41b2-80c8-73d7bf0b4bcd",
+      "id": "6e09242f-96cb-4d1f-95fb-ebdb26d1e0e4",
       "name": "Send a text message2",
       "webhookId": "d9b6d266-f6d4-4390-bfe2-199001b5cab7",
       "credentials": {
         "telegramApi": {
-          "id": "DRoG4T6BkqkIkIHV",
-          "name": "Telegram Test"
+          "id": "RYqcsiYsOxexfR4U",
+          "name": "Telegram account moj asystent"
         }
       }
     },
@@ -863,10 +863,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1952,
-        1408
+        416,
+        592
       ],
-      "id": "d464fa6f-31c1-44ce-9cd3-3c9ad89677f2",
+      "id": "1d3b0eae-8207-4f26-ac82-a202afedea09",
       "name": "If1"
     },
     {
@@ -876,10 +876,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1744,
-        1328
+        208,
+        512
       ],
-      "id": "25f78558-d1fd-4aae-b108-8cce8b3ec7ef",
+      "id": "c3e2ae3c-fc12-4b7b-a534-54357ef7e03e",
       "name": "Code in JavaScript"
     },
     {
@@ -905,15 +905,15 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        2224,
-        1536
+        688,
+        720
       ],
-      "id": "1740da2c-421e-49fa-a038-b007d9e63a7f",
+      "id": "0d5ef8cc-7ae2-4b76-91a3-8b90916f917a",
       "name": "Delete rows or columns from sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "PEOH00KRBvXg955P",
-          "name": "Google Sheets @sobiecki.org"
+          "id": "FB1poHZRQGWU0JyZ",
+          "name": "Google Sheets moj asystent"
         }
       }
     },
@@ -929,16 +929,16 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2688,
-        1584
+        1152,
+        768
       ],
-      "id": "bdce18e9-a376-4552-8b58-5d8ff96d94ec",
+      "id": "46d389d3-5969-4add-b020-16547b5b052c",
       "name": "Send a text message3",
       "webhookId": "d9b6d266-f6d4-4390-bfe2-199001b5cab7",
       "credentials": {
         "telegramApi": {
-          "id": "ArpadXCd9obXUOb9",
-          "name": "Telegram account 2"
+          "id": "RYqcsiYsOxexfR4U",
+          "name": "Telegram account moj asystent"
         }
       }
     },
@@ -963,15 +963,15 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        1088,
-        1312
+        -448,
+        496
       ],
-      "id": "4bcb1fa7-572e-4d29-88a9-16871f7c8541",
+      "id": "70c19a45-3552-4574-a98d-f4ae89c7a829",
       "name": "Get row(s) in sheet1",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "PEOH00KRBvXg955P",
-          "name": "Google Sheets @sobiecki.org"
+          "id": "FB1poHZRQGWU0JyZ",
+          "name": "Google Sheets moj asystent"
         }
       }
     },
@@ -982,10 +982,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1264,
-        1392
+        -272,
+        576
       ],
-      "id": "69054e4d-1dc0-46b3-869e-954bcd73ebd7",
+      "id": "0955f61f-de4f-48ed-b09d-9c4007dfdfe2",
       "name": "Code in JavaScript4"
     },
     {
@@ -995,10 +995,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2448,
-        1552
+        912,
+        736
       ],
-      "id": "202a29ec-3072-4b96-885f-fa833a4c6798",
+      "id": "52644108-c35f-4a3e-b4c4-a6ea38983df8",
       "name": "Code in JavaScript5"
     }
   ],
@@ -1322,11 +1322,11 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "7720b086-b82f-489d-965c-1d7681671c39",
+  "versionId": "befea8ae-f016-49f0-9aa3-c39f96daff65",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "51c4d31089981c0ad199e2af1e24027eab07b58a3252314b7227e08b09928d30"
+    "instanceId": "36c1969345fc1ddf302b7bbacc043da804ffaa31330036d1a88af5ddcc3a4146"
   },
-  "id": "Mev3eeKEabG37H2zCmUZ5",
+  "id": "19J1qChtn1izC1XMrFB5B",
   "tags": []
 }
